@@ -16,18 +16,18 @@ done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restor
 - [x] plan: judge merged A+C into one slice, 120 reviewable lines, SYSLIB0057 suppressed, packages bumped only after canary restore (20:55)
 - [x] test-first: TargetFrameworkPinTests committed red in 68976ab62 (21:05)
 - [ ] implement
-  - [x] slice 1: pin in 9a5642418, null-safe GlobalSettings setters and two test amendments after that. Parent full Core.Test: Passed 4695, Failed 0, Skipped 26, Total 4721 (net10.0). Line count pending the follow-up commit.
-- [ ] verify
+  - [x] slice 1: pin in 9a5642418, settings and test amendments in f0a95179d. Against 53c49c294 the raw diff is 376 lines. Product files are 116 reviewable lines. The rest is the committed run folder. Parent Core.Test: Passed 4695, Failed 0, Skipped 26, Total 4721 (net10.0).
+- [x] verify: verifier pass. Core.Test Passed 4695, Failed 0, Skipped 26, Total 4721. Builds 0 Error(s). dotnet --version 10.0.112 (22:20)
 - [ ] deliver
-- [ ] merge
+- [~] merge. skip: the user said do not merge. The run ends at the open PR.
 
 ## Playbook steps (feature)
 - [x] name the data shape before writing any logic: TargetFramework net10.0, global.json sdk 10.0.100 with rollForward latestFeature, WarningsNotAsErrors append SYSLIB0057 in a new Directory.Build.targets (20:55)
 - [x] name the user journeys this feature has to make work: a reviewer sees the compiled Core and Core.Test assemblies target net10.0, and a developer runs the Core test project (21:05)
 - [x] tests for those journeys land before the implementation: test/Core.Test/TargetFrameworkPinTests.cs, commit 68976ab62 (21:05)
-- [ ] implement slice by slice, each one shippable on its own
-- [ ] no opportunistic refactors in the diff
-- [ ] the feature works end to end on the real artifact, not just in unit tests
+- [x] implement slice by slice, each one shippable on its own: one slice, commits 9a5642418 and f0a95179d (22:20)
+- [x] no opportunistic refactors in the diff: package bumps stopped at Caching.Memory. The other Trim setters in GlobalSettings.cs got the same null-conditional because the binder hits them too (22:20)
+- [x] the feature works end to end on the real artifact, not just in unit tests: dotnet build of Core.Test, Api, and Infrastructure.EntityFramework each reported 0 Error(s), and Core.Test passed 4695 (22:20)
 
 ## Log
 - 20:13 intake: detached HEAD at 53c49c294 was clean. Created cursor/net10-upgrade-5e51 and cursor/pin-net8-5e51 from that commit in /workspace. Worktree off origin/hsaab-master skipped because the task forbids leaving the net8.0 pin. .NET SDK is not installed yet, so build proof waits until the SDK is installed. keep ledger is on, so this folder will be force-added despite .git/info/exclude.
@@ -43,3 +43,5 @@ done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restor
 - 21:05 test-designer wrote test/Core.Test/TargetFrameworkPinTests.cs and committed 68976ab62. Parent re-ran the filter. The first restore failed NU1902 on MailKit 4.15.0 because this SDK treats audit warnings as errors. Re-ran with `/p:NuGetAudit=false` so the tests could execute. Both failed on `.NETCoreApp,Version=v8.0` missing `Version=v10.0`. That is the right red. Parent read the 32-line test file. No source files changed.
 - 21:40 implementer returned the pin. Parent read the diff. Directory.Build.props, global.json, ten TargetFramework overrides, Microsoft.Extensions.Caching.Memory 8.0.1 to 10.0.12 in src/Core/Core.csproj, and a new Directory.Build.targets. No test source changed. Guard: four of the overrides are `*.Test.csproj` or `*.IntegrationTest.csproj`, which match test-paths, but each diff is only the TargetFramework line the plan named. They stay. The assertion file was not touched.
 - 21:45 parent re-ran the 11 failing Core tests on the net10.0 build. Eight throw NullReferenceException in GlobalSettings event-logging setters because the net10 binder passes null into value.Trim. Two PushSendRequestModel tests still throw JsonException, but the message is now "was missing required properties including" instead of "missing required properties, including the following". TokenIsValid_Success returns false because Unprotect(string) throws CryptographicException on the fixture token "protected_token" before Unprotect(byte[]) runs. A real EphemeralDataProtectionProvider roundtrip still works. Plan amendment: fix the setters in GlobalSettings.cs with the null-conditional already used by AzureQueueEventSettings, and send the two test files back to the test designer.
+- 22:10 parent re-ran the full Core.Test suite after those fixes: Passed 4695, Failed 0, Skipped 26, Total 4721, Core.Test.dll (net10.0). dotnet --version 10.0.112. Core.Test build 74 Warning(s), 0 Error(s). Api build 210 Warning(s), 0 Error(s). Infrastructure.EntityFramework build 54 Warning(s), 0 Error(s). No csproj still says TargetFramework net8.0.
+- 22:20 verifier pass. Quoted the same Core.Test summary and 0 Error(s) on the three builds. Test edits match the plan amendment. Product diff is 116 reviewable lines. Raw diff is 376 because the run folder is committed.
