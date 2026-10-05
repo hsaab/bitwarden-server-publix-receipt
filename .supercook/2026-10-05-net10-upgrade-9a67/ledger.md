@@ -16,7 +16,7 @@ done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restor
 - [x] plan: judge merged A+C into one slice, 120 reviewable lines, SYSLIB0057 suppressed, packages bumped only after canary restore (20:55)
 - [x] test-first: TargetFrameworkPinTests committed red in 68976ab62 (21:05)
 - [ ] implement
-  - [ ] slice 1: retarget the pin and bump only packages that fail restore (estimate 120). Pin diff is in the worktree. 11 Core.Test failures remain and are in this slice.
+  - [x] slice 1: pin in 9a5642418, null-safe GlobalSettings setters and two test amendments after that. Parent full Core.Test: Passed 4695, Failed 0, Skipped 26, Total 4721 (net10.0). Line count pending the follow-up commit.
 - [ ] verify
 - [ ] deliver
 - [ ] merge

@@ -63,6 +63,12 @@ Ship one slice that sets the SDK and the TargetFramework, suppresses SYSLIB0057,
 - `dotnet build bitwarden-server.sln`, `src/Sql/Sql.sqlproj`, and the RustSdk cargo PreBuild.
 - Rebasing onto upstream to inherit a newer pin.
 
+## Amendment (after the first canary build)
+The pin restore and build succeeded. Full Core.Test did not. Three net10 runtime differences stay in this slice:
+- `GlobalSettings` event-logging setters call `value.Trim('"')`. The net10 configuration binder invokes those setters with null. Use the null-conditional already in `AzureQueueEventSettings` (`value?.Trim('"')`) on every `value.Trim('"')` setter in `src/Core/Settings/GlobalSettings.cs`.
+- `PushSendRequestModelTests.Validate_RequiredFieldNotProvided_Invalid` asserts the net8 System.Text.Json sentence. The net10 sentence is `was missing required properties including: '{field}'`. The test designer updates that assertion. Deserialization must still throw, and the message must still name the missing field.
+- `CoreHelpersTests.TokenIsValid_Success` passes the fixture string `protected_token`. On net10, `Unprotect(string)` throws `CryptographicException` before `Unprotect(byte[])`. A real `EphemeralDataProtectionProvider` roundtrip still returns the payload. The test designer updates the fixture. Production `TokenIsValid` stays as it is.
+
 ## Provenance
 Slice 1 merges A and C. The TFM file list, the `global.json` shape, the rule to leave `Bitwarden.Server.Sdk` at 1.5.1 unless restore fails inside it, and the project-level done commands come from A. The SYSLIB0057 append in a new `Directory.Build.targets`, and the decision to restore canaries before bumping packages, come from C. From B, the slice keeps one shared exact bracket for the EntityFrameworkCore family and leaves the test stack alone unless restore or the runner names it.
 
