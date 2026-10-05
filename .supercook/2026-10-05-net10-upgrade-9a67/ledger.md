@@ -15,10 +15,10 @@ done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restor
 - [~] design doc. skip: big-change is no, TargetFramework bump does not change a data model, API contract, or auth model
 - [x] plan: judge merged A+C into one slice, 120 reviewable lines, SYSLIB0057 suppressed, packages bumped only after canary restore (20:55)
 - [x] test-first: TargetFrameworkPinTests committed red in 68976ab62 (21:05)
-- [ ] implement
+- [x] implement: slice 1 landed in 9a5642418 and f0a95179d (22:25)
   - [x] slice 1: pin in 9a5642418, settings and test amendments in f0a95179d. Against 53c49c294 the raw diff is 376 lines. Product files are 116 reviewable lines. The rest is the committed run folder. Parent Core.Test: Passed 4695, Failed 0, Skipped 26, Total 4721 (net10.0).
 - [x] verify: verifier pass. Core.Test Passed 4695, Failed 0, Skipped 26, Total 4721. Builds 0 Error(s). dotnet --version 10.0.112 (22:20)
-- [ ] deliver
+- [x] deliver: PR https://github.com/hsaab/bitwarden-server-publix-receipt/pull/25 into cursor/pin-net8-5e51 (22:25)
 - [~] merge. skip: the user said do not merge. The run ends at the open PR.
 
 ## Playbook steps (feature)
@@ -45,3 +45,4 @@ done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restor
 - 21:45 parent re-ran the 11 failing Core tests on the net10.0 build. Eight throw NullReferenceException in GlobalSettings event-logging setters because the net10 binder passes null into value.Trim. Two PushSendRequestModel tests still throw JsonException, but the message is now "was missing required properties including" instead of "missing required properties, including the following". TokenIsValid_Success returns false because Unprotect(string) throws CryptographicException on the fixture token "protected_token" before Unprotect(byte[]) runs. A real EphemeralDataProtectionProvider roundtrip still works. Plan amendment: fix the setters in GlobalSettings.cs with the null-conditional already used by AzureQueueEventSettings, and send the two test files back to the test designer.
 - 22:10 parent re-ran the full Core.Test suite after those fixes: Passed 4695, Failed 0, Skipped 26, Total 4721, Core.Test.dll (net10.0). dotnet --version 10.0.112. Core.Test build 74 Warning(s), 0 Error(s). Api build 210 Warning(s), 0 Error(s). Infrastructure.EntityFramework build 54 Warning(s), 0 Error(s). No csproj still says TargetFramework net8.0.
 - 22:20 verifier pass. Quoted the same Core.Test summary and 0 Error(s) on the three builds. Test edits match the plan amendment. Product diff is 116 reviewable lines. Raw diff is 376 because the run folder is committed.
+- 22:25 opened https://github.com/hsaab/bitwarden-server-publix-receipt/pull/25 from cursor/net10-upgrade-5e51 into cursor/pin-net8-5e51. Not merged.
