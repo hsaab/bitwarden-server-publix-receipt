@@ -1,0 +1,43 @@
+# Ledger: upgrade Bitwarden server fork from net8.0 to net10.0
+run-id: 2026-10-05-net10-upgrade-9a67
+repo: https://github.com/hsaab/bitwarden-server-publix-receipt | branch: cursor/net10-upgrade-5e51 | worktree: /workspace
+started: 2026-10-05 20:13 | tier: complex | track: feature | design doc: skip (big-change no)
+capabilities: git yes | host github (gh authed) | worktrees yes | tests `dotnet test ./test` and `dotnet test ./bitwarden_license/test` (CI .github/workflows/test.yml:56 and :59) | build entry bitwarden-server.sln (no slnx at this pin) | PRs yes (template .github/PULL_REQUEST_TEMPLATE.md) | dotnet SDK not on PATH at intake
+test-paths: test/**/*.{Test,IntegrationTest}/**/*.cs, bitwarden_license/test/**/*.{Test,IntegrationTest}/**/*.cs, **/*Tests.cs, **/*.Test.csproj, **/*.IntegrationTest.csproj
+models: all roles inherit (no ~/.supercook/models.md; shipped roster is inherit)
+base: commit 53c49c294989544d8d582fc462392f7df1e3b132 (Directory.Build.props pins net8.0, version 2026.4.1). PR base branch cursor/pin-net8-5e51 at that commit. Did not branch from origin/hsaab-master.
+done: TargetFramework is net10.0 on the projects this pin builds; `dotnet restore` and `dotnet build` succeed with quoted output; Core or another high-signal test project runs with quoted results; PR is open from cursor/net10-upgrade-5e51 into cursor/pin-net8-5e51 and is not merged; PR body has a DEMO RECEIPT paragraph; this ledger is committed on the working branch.
+
+## Phases
+- [x] intake: branched off pin 53c49c294 in /workspace, capabilities probed, ledger seeded (20:13)
+- [x] assess: complex/feature, big-change no (20:16)
+- [x] recon: 1 broad + 4 targeted explorers, pointers in log (20:35)
+- [~] design doc. skip: big-change is no, TargetFramework bump does not change a data model, API contract, or auth model
+- [x] plan: judge merged A+C into one slice, 120 reviewable lines, SYSLIB0057 suppressed, packages bumped only after canary restore (20:55)
+- [x] test-first: TargetFrameworkPinTests committed red in 68976ab62 (21:05)
+- [ ] implement
+  - [ ] slice 1: retarget the pin and bump only packages that fail restore (estimate 120)
+- [ ] verify
+- [ ] deliver
+- [ ] merge
+
+## Playbook steps (feature)
+- [x] name the data shape before writing any logic: TargetFramework net10.0, global.json sdk 10.0.100 with rollForward latestFeature, WarningsNotAsErrors append SYSLIB0057 in a new Directory.Build.targets (20:55)
+- [x] name the user journeys this feature has to make work: a reviewer sees the compiled Core and Core.Test assemblies target net10.0, and a developer runs the Core test project (21:05)
+- [x] tests for those journeys land before the implementation: test/Core.Test/TargetFrameworkPinTests.cs, commit 68976ab62 (21:05)
+- [ ] implement slice by slice, each one shippable on its own
+- [ ] no opportunistic refactors in the diff
+- [ ] the feature works end to end on the real artifact, not just in unit tests
+
+## Log
+- 20:13 intake: detached HEAD at 53c49c294 was clean. Created cursor/net10-upgrade-5e51 and cursor/pin-net8-5e51 from that commit in /workspace. Worktree off origin/hsaab-master skipped because the task forbids leaving the net8.0 pin. .NET SDK is not installed yet, so build proof waits until the SDK is installed. keep ledger is on, so this folder will be force-added despite .git/info/exclude.
+- 20:16 assessor: net8.0 is pinned in Directory.Build.props and global.json and overridden in test, util, and license csproj files, so the SDK and package bump crosses the whole solution. Parent checked: Directory.Build.props:4 is net8.0, and util/test/license csproj files also hardcode net8.0. Complex stands. Big-change no stands: no data model or API contract change.
+- 20:22 broad explorer: Directory.Build.props:4 is the inherited pin. 10 csproj override it (4 test, 4 util, 2 bitwarden_license/test). src has zero overrides. global.json:3 pins SDK 8.0.100 with rollForward latestFeature. setup-dotnet in test.yml, build.yml, and test-database.yml passes no version, so it reads global.json. No Directory.Packages.props. CI tests `./test` and `./bitwarden_license/test` after removing src/Sql/Sql.sqlproj. 14 Dockerfiles pin mcr.microsoft.com/dotnet 8.0 tags. Parent confirmed Directory.Build.props and global.json by reading them.
+- 20:35 packages explorer: 27 Microsoft.* 8.0 PackageReferences across 18 id/version groups. EF Core and providers are exact-pinned with brackets in src/Infrastructure.EntityFramework/Infrastructure.EntityFramework.csproj:11-15 and the migration csproj files. Test SDK properties in Directory.Build.props:23-35 are already 18.x / xUnit 2.6.6, repo does not say if they support net10. No nuget.config, no lock file, no LangVersion.
+- 20:35 compile explorer: warnings-as-errors will fail on `new X509Certificate2` (SYSLIB0057) in src/Core/Utilities/CoreHelpers.cs:144, src/Api/Auth/Models/Request/OrganizationSsoRequestModel.cs:150, bitwarden_license/src/Sso/Utilities/DynamicAuthenticationSchemeProvider.cs:409, test/Setup.Test/ProgramTests.cs:73. Sql.sqlproj is in bitwarden-server.sln Build.0, CI removes it before test. No BinaryFormatter.
+- 20:35 tests explorer: high-signal command is `dotnet test test/Core.Test/Core.Test.csproj`. It inherits TF, no database, no Docker, no Rust. Full `dotnet test ./test` pulls integration projects and util/RustSdk cargo build. Integration projects to skip if the suite is heavy are listed in the explorer return (Api, Identity, Events, SeederApi, Server, Infrastructure, EF, license Scim and Sso).
+- 20:55 arena: A and B rewrite X509Certificate2 to X509CertificateLoader in one slice (160 and 320 lines). C suppresses SYSLIB0057 and canaries package bumps (110 lines). All three use one slice because the TFM and the packages do not restore apart.
+- 20:55 plan-judge: merged A+C. Slice 1 estimate 120, under 500, no cohesion exception required. Rejected the certificate loader rewrite because the old constructor sniffs PKCS#12 and the loader methods do not. Dissent: suppression fails if net10 removes the constructors instead of obsoleting them. Parent read plan.md. The slice names files, journeys, verify commands, and the 120 line estimate.
+- 20:35 sdk explorer: changing only global.json sdk.version still requests Microsoft.Build.Traversal 4.1.0, Microsoft.Build.Sql 1.0.0, Bitwarden.Server.Sdk 1.5.1. RustSdk is in the sln and its PreBuild runs cargo. Workflows do not set DOTNET_VERSION. dev/generate_openapi_files.ps1 hardcodes net8.0 output paths. .vscode/launch.json has 18 net8.0 paths. 14 Dockerfiles stay out of the build command.
+- 20:58 sdk install: builds.dotnet.microsoft.com and dot.net are blocked by egress. Installed Ubuntu packages dotnet-sdk-8.0 (8.0.131) and dotnet-sdk-10.0 (10.0.112) from archive.ubuntu.com. In this repo `dotnet --version` is 8.0.131 because global.json asks for 8.0.100 with rollForward latestFeature. 10.0.100 with the same rollForward will select 10.0.112. Do not pin a 10.0.2xx or 10.0.4xx SDK that is not installed.
+- 21:05 test-designer wrote test/Core.Test/TargetFrameworkPinTests.cs and committed 68976ab62. Parent re-ran the filter. The first restore failed NU1902 on MailKit 4.15.0 because this SDK treats audit warnings as errors. Re-ran with `/p:NuGetAudit=false` so the tests could execute. Both failed on `.NETCoreApp,Version=v8.0` missing `Version=v10.0`. That is the right red. Parent read the 32-line test file. No source files changed.
