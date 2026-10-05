@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);SYSLIB0057;ASPDEPR005;NU1510;NU1902;NU1903</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>
