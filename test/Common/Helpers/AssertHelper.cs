@@ -15,6 +15,13 @@ namespace Bit.Test.Common.Helpers;
 
 public static class AssertHelper
 {
+    // .NET 10 LINQ ToList sets Capacity from ICollection.Count. A hand-built List
+    // still grows to the default capacity, so Capacity is not sequence equality.
+    private static bool IsListCapacity(PropertyInfo property) =>
+        property.Name == "Capacity" &&
+        property.DeclaringType is { IsGenericType: true } declaringType &&
+        declaringType.GetGenericTypeDefinition() == typeof(List<>);
+
     public static void AssertPropertyEqual(object expected, object actual, params string[] excludedPropertyStrings)
     {
         var relevantExcludedProperties = excludedPropertyStrings.Where(name => !name.Contains('.')).ToList();
@@ -29,7 +36,7 @@ public static class AssertHelper
             throw new Exception("Actual object is null but expected is not");
         }
 
-        foreach (var expectedPropInfo in expected.GetType().GetProperties().Where(pi => !relevantExcludedProperties.Contains(pi.Name) && !pi.GetIndexParameters().Any()))
+        foreach (var expectedPropInfo in expected.GetType().GetProperties().Where(pi => !IsListCapacity(pi) && !relevantExcludedProperties.Contains(pi.Name) && !pi.GetIndexParameters().Any()))
         {
             var actualPropInfo = actual.GetType().GetProperty(expectedPropInfo.Name);
 

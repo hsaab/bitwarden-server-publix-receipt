@@ -10,11 +10,11 @@ public class NotificationStatusDetailsViewQuery(Guid userId, ClientType clientTy
 {
     public IQueryable<NotificationStatusDetails> Run(DatabaseContext dbContext)
     {
-        var clientTypes = new[] { ClientType.All };
-        if (clientType != ClientType.All)
-        {
-            clientTypes = [ClientType.All, clientType];
-        }
+        // EF Core translates List.Contains. A collection expression does not, and the
+        // notification list query fails at runtime on SQLite.
+        var clientTypes = clientType != ClientType.All
+            ? new List<ClientType> { ClientType.All, clientType }
+            : new List<ClientType> { ClientType.All };
 
         var query = from n in dbContext.Notifications
                     join ou in dbContext.OrganizationUsers.Where(ou => ou.UserId == userId)
