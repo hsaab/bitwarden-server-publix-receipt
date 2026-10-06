@@ -158,6 +158,14 @@ public abstract class WebApplicationFactoryBase<T> : WebApplicationFactory<T>
             { "globalSettings:launchDarkly:flagValues:web-push", "true" },
         };
 
+        // The factory does not load environment variables. CI reaches the pricing
+        // service from appsettings. This override is only for hosts that cannot.
+        var pricingUri = Environment.GetEnvironmentVariable("BITWARDEN_TEST_PRICING_URI");
+        if (!string.IsNullOrEmpty(pricingUri))
+        {
+            config["globalSettings:pricingUri"] = pricingUri;
+        }
+
         // Some database drivers modify the connection string
         TestDatabase.ModifyGlobalSettings(config);
 

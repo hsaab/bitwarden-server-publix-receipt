@@ -5,7 +5,6 @@ using Bit.Core.SecretsManager.Models.Data;
 using Bit.Core.SecretsManager.Repositories;
 using Bit.Test.Common.AutoFixture;
 using Bit.Test.Common.AutoFixture.Attributes;
-using Bit.Test.Common.Helpers;
 using NSubstitute;
 using Xunit;
 
@@ -38,14 +37,12 @@ public class ServiceAccountSecretsDetailsQueryTests
         if (includeAccessToSecrets)
         {
             await sutProvider.GetDependency<IServiceAccountRepository>().Received(1)
-                .GetManyByOrganizationIdWithSecretsDetailsAsync(Arg.Is(AssertHelper.AssertPropertyEqual(mockSaDetails.ServiceAccount.OrganizationId)),
-                    Arg.Any<Guid>(), Arg.Any<AccessClientType>());
+                .GetManyByOrganizationIdWithSecretsDetailsAsync(organizationId, userId, accessClient);
         }
         else
         {
             await sutProvider.GetDependency<IServiceAccountRepository>().Received(1)
-                .GetManyByOrganizationIdAsync(Arg.Is(AssertHelper.AssertPropertyEqual(mockSa.OrganizationId)),
-                    Arg.Any<Guid>(), Arg.Any<AccessClientType>());
+                .GetManyByOrganizationIdAsync(organizationId, userId, accessClient);
             Assert.Equal(0, result.First().AccessToSecrets);
         }
     }

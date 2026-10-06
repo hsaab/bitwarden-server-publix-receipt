@@ -1,5 +1,4 @@
-﻿using System.Text;
-using AutoFixture;
+﻿using AutoFixture;
 using Bit.Core.AdminConsole.Context;
 using Bit.Core.AdminConsole.Enums.Provider;
 using Bit.Core.Context;
@@ -408,24 +407,11 @@ public class CoreHelpersTests
     [MemberData(nameof(TokenIsValidData))]
     public void TokenIsValid_Success(string unprotectedTokenTemplate, string firstPart, string userEmail, Guid id, DateTime creationTime, double expirationInHours, bool isValid)
     {
-        var protector = new TestDataProtector(string.Format(unprotectedTokenTemplate, CoreHelpers.ToEpocMilliseconds(creationTime)));
+        var unprotectedToken = string.Format(unprotectedTokenTemplate, CoreHelpers.ToEpocMilliseconds(creationTime));
+        var protector = new EphemeralDataProtectionProvider().CreateProtector(nameof(TokenIsValid_Success));
+        var token = protector.Protect(unprotectedToken);
 
-        Assert.Equal(isValid, CoreHelpers.TokenIsValid(firstPart, protector, "protected_token", userEmail, id, expirationInHours));
-    }
-
-    private class TestDataProtector : IDataProtector
-    {
-        private readonly string _token;
-        public TestDataProtector(string token)
-        {
-            _token = token;
-        }
-        public IDataProtector CreateProtector(string purpose) => throw new NotImplementedException();
-        public byte[] Protect(byte[] plaintext) => throw new NotImplementedException();
-        public byte[] Unprotect(byte[] protectedData)
-        {
-            return Encoding.UTF8.GetBytes(_token);
-        }
+        Assert.Equal(isValid, CoreHelpers.TokenIsValid(firstPart, protector, token, userEmail, id, expirationInHours));
     }
 
     [Theory]
